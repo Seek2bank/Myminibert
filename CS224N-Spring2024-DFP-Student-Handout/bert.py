@@ -51,13 +51,13 @@ class BertSelfAttention(nn.Module):
     #   [bs, seq_len, num_attention_heads * attention_head_size = hidden_size].
 
     ### DONE
-    S = key @ query.transpose(-2, -1) / math.sqrt(key.shape[-1])
-    S = S + attention_mask
-    S = F.softmax(S, dim=-1) # [bs, num_attention_heads, seq_len, seq_len]
-    attn_value = S @ value # [bs, num_attention_heads, seq_len, attention_head_size]
+    S = query @ key.transpose(-2, -1) / math.sqrt(key.shape[-1])
+    S += attention_mask
+    attn_value = F.softmax(S, dim=-1) # apply dropout after softmax normalization
+    attn_value = attn_value @ value # [bs, num_attention_heads, seq_len, attention_head_size]
     attn_value = attn_value.transpose(1, 2)
     bs, seq_len, num_attention_heads, attention_head_size = attn_value.shape
-    attn_value = attn_value.reshape(bs, -1, num_attention_heads*attention_head_size)
+    attn_value = attn_value.reshape(bs, -1, num_attention_heads*attention_head_size) 
     # raise NotImplementedError
     return attn_value
 
