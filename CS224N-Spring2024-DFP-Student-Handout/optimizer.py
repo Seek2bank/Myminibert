@@ -60,7 +60,32 @@ class AdamW(Optimizer):
                 # Refer to the default project handout for more details.
 
                 ### TODO
-                raise NotImplementedError
-
+                # raise NotImplementedError
+                if state.get("t", None) is None:
+                    state["t"] = 0
+                if state.get("m", None) is None:
+                    state["m"] = torch.zeros_like(p.data)
+                if state.get("v", None) is None:
+                    state["v"] = torch.zeros_like(p.data)
+                m = state["m"]
+                v = state["v"]
+                t = state["t"]
+                t += 1
+                beta1, beta2 = group["betas"]
+                eps = group["eps"]
+                m = beta1 * m + (1-beta1) * grad
+                v = beta2 * v + (1-beta2) * grad * grad
+                alpha_t = alpha * math.sqrt(1-beta2**t) / (1-beta1**t)
+                p.data -= alpha_t * m / (v.sqrt() + eps)
+                weight_decay = group["weight_decay"]
+                p.data -= alpha * weight_decay * p.data
+                state["m"] = m
+                state["v"] = v
+                state["t"] = t
+                    
+                # DONE: how to check convergence? Leave it for outter layer?
+                # Yes
+                    
+                    
 
         return loss
