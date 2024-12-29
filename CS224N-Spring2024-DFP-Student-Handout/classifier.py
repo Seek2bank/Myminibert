@@ -37,7 +37,7 @@ class BertSentimentClassifier(torch.nn.Module):
     def __init__(self, config):
         super(BertSentimentClassifier, self).__init__()
         self.num_labels = config.num_labels
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.bert = BertModel.from_pretrained('/home/jhy/Learning/nlp/project/Myminibert/CS224N-Spring2024-DFP-Student-Handout/model/bert-base-uncased')
 
         # Pretrain mode does not require updating BERT paramters.
         assert config.fine_tune_mode in ["last-linear-layer", "full-model"]
@@ -49,7 +49,10 @@ class BertSentimentClassifier(torch.nn.Module):
 
         # Create any instance variables you need to classify the sentiment of BERT embeddings.
         ### TODO
-        raise NotImplementedError
+        self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
+        self.project = torch.nn.Linear(config.hidden_size, self.num_labels)
+        # raise NotImplementedError
+        
 
 
     def forward(self, input_ids, attention_mask):
@@ -57,16 +60,25 @@ class BertSentimentClassifier(torch.nn.Module):
         # The final BERT contextualized embedding is the hidden state of [CLS] token (the first token).
         # HINT: You should consider what is an appropriate return value given that
         # the training loop currently uses F.cross_entropy as the loss function.
-        ### TODO
-        raise NotImplementedError
+        ### DONE
+        # raise NotImplementedError
+        # last_hidden_state, pooler_output = {v for k,v in self.bert(input_ids, attention_mask).items()}
+        # # logits = self.bert(input_ids, attention_mask)
+        # logits =  self.project(self.dropout(pooler_output))
+        # return logits
+        last_hidden_state, pooler_output = {v for k,v in self.bert(input_ids, attention_mask).items()}
+        embedding = self.dropout(pooler_output)
 
+        proj = self.project(embedding)
+        logits = F.softmax(proj, dim=1)
+        return logits
 
 
 class SentimentDataset(Dataset):
     def __init__(self, dataset, args):
         self.dataset = dataset
         self.p = args
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.tokenizer = BertTokenizer.from_pretrained('/home/jhy/Learning/nlp/project/Myminibert/CS224N-Spring2024-DFP-Student-Handout/model/bert-base-uncased')
 
     def __len__(self):
         return len(self.dataset)
@@ -104,7 +116,7 @@ class SentimentTestDataset(Dataset):
     def __init__(self, dataset, args):
         self.dataset = dataset
         self.p = args
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.tokenizer = BertTokenizer.from_pretrained('/home/jhy/Learning/nlp/project/Myminibert/CS224N-Spring2024-DFP-Student-Handout/model/bert-base-uncased')
 
     def __len__(self):
         return len(self.dataset)
@@ -368,10 +380,10 @@ if __name__ == "__main__":
         test_out = 'predictions/' + args.fine_tune_mode + '-sst-test-out.csv'
     )
 
-    train(config)
+    # train(config)
 
     print('Evaluating on SST...')
-    test(config)
+    # test(config)
 
     print('Training Sentiment Classifier on cfimdb...')
     config = SimpleNamespace(
